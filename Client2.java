@@ -1,146 +1,177 @@
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.*;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 public class Client2 {
     public static void main(String[] args) {
 
-        while (true) {
-
-            ProcessRequest();
-            break;
-
-        }
+        clientServerCommunication();
 
     }
 
-    public static List<String> ReadBigStringIn(BufferedReader buffIn, int max2) throws IOException {
-        List<String> allCapableServers = new ArrayList<String>();
-        String line;
-        while( max2!=0) {
-           allCapableServers.add(buffIn.readLine());
-           max2--;
+    // This method saves all strings generated from GETS Capable command into a list
+    // of strings
+    public static List<String> saveAllServers(BufferedReader in, int numberOfServer) throws IOException {
+        List<String> allCapableServer = new ArrayList<String>();
+        while (numberOfServer != 0) {
+            allCapableServer.add(in.readLine());
+
+            numberOfServer--;
         }
-        return allCapableServers;
+        return allCapableServer;
     }
 
-    public static String schedule(DataOutputStream dout, BufferedReader in, int s1, int max2, int x1, String sx13) {
+    // This method compares the cores of all capable servers. The server with the
+    // highest number of cores will saved into a string.
+    // In addition, this method will count the number of the largest servers.
+    // This method will return a string containing the largest server type and the
+    // number of the largest servers
+    public static String largestServerSearch(DataOutputStream dout, BufferedReader in, int saveCount,
+            int numberOfCapableServers, int largestCore, String largestType) {
 
-       
-        int countMax = 0;
+        int countLargest = 0;
+        List<String> temp = new ArrayList<String>();
 
         try {
             dout.write(("OK\n").getBytes());
 
-            List<String> temp2 = ReadBigStringIn(in,max2);
-            String sx5;
-            
-            for (int i = 0; i < max2; i++) {
-                
-                s1 = 0;
-                if (temp2.size() > 4) {
-                    if (temp2.get(i) != null && temp2.get(i).length() > 4)
-                        s1 = Integer.parseInt(temp2.get(i).split(" ")[4]);
+            temp = saveAllServers(in, numberOfCapableServers);
+
+            for (int i = 0; i < numberOfCapableServers; i++) {
+
+                saveCount = 0;
+                if (temp.size() > 4) {
+                    if (temp.get(i) != null && temp.get(i).length() > 4)
+                        saveCount = Integer.parseInt(temp.get(i).split(" ")[4]);
                 }
 
-                if (s1 >= x1) {
-                    x1 = s1;
-                    if (temp2.get(i) != null)
-                        sx13 = temp2.get(i).split(" ")[0];
+                if (saveCount >= largestCore) {
+                    largestCore = saveCount;
+
                 }
 
             }
 
-            for (int i = 0; i < max2; i++) {
-                if (temp2.get(i).length() > 4) {
-                    if (Integer.parseInt(temp2.get(i).split(" ")[4]) == x1) {
+            for (int i = 0; i < numberOfCapableServers; i++) {
 
-                        countMax++;
+                if (largestCore == Integer.parseInt(temp.get(i).split(" ")[4])) {
+                    largestType = temp.get(i).split(" ")[0];
+                    break;
+
+                }
+
+            }
+
+            for (int i = 0; i < numberOfCapableServers; i++) {
+                if (temp.get(i).length() > 4) {
+                    if (largestType.equalsIgnoreCase(temp.get(i).split(" ")[0])) {
+
+                        countLargest++;
 
                     }
                 }
 
             }
+            // ./ds-server -c ds-S1-config01--wk6.xml -v brief -n > ds-test-config10-log.txt
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
-        return sx13 + " " + countMax;
+        return largestType + " " + countLargest;
     }
 
-    public static void ProcessRequest() {
+    // This method is in charge of sending initial messages like "HELO" and "AUTH"
+    public static void initialMessage(DataOutputStream dout, BufferedReader in) {
+
         try {
-            Socket s = new Socket("localhost", 50000);
-            // DataInputStream dis = new DataInputStream(s.getInputStream());
-            DataOutputStream dout = new DataOutputStream(s.getOutputStream());
-            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
             dout.write(("HELO\n").getBytes());
             dout.flush();
-            String s2 = in.readLine();
-            System.out.println(s2);
+            String OK = in.readLine();
+            System.out.println(OK);
             dout.write(("AUTH 44751494\n").getBytes());
             dout.flush();
-            String s3 = in.readLine();
-            System.out.println(s3);
-            Boolean right = false;
+            String OK2 = in.readLine();
+            System.out.println(OK2);
 
-            while (true) {
-                V(dout, in, 0, 0, right);
-                break;
-            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
-            dout.write(("QUIT\n").getBytes());
-            dout.flush();
-            String s5 = in.readLine();
-            System.out.println(s5);
+    }
+
+    // This method closes data output stream, buffered reader and socket.
+    public static void closeConnection(DataOutputStream dout, BufferedReader in, Socket s) {
+
+        try {
 
             dout.close();
             in.close();
             s.close();
-            
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+    }
+
+    // This method combines all other helper functions to communicate and schedule
+    // jobs from ds-server
+    public static void clientServerCommunication() {
+        try {
+            Socket s = new Socket("localhost", 50000);
+            DataOutputStream dout = new DataOutputStream(s.getOutputStream());
+            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            initialMessage(dout, in);
+
+            requestHandler(dout, in, 0);
+
+            closeConnection(dout, in, s);
+
         } catch (Exception e) {
             System.out.println(e);
         }
 
     }
 
-    public static void V(DataOutputStream dout, BufferedReader in, int x, int y, boolean b) {
-        int x1 = x;
-        int y1 = y;
-        boolean b1 = b;
+    // This method is responsible for communicating with ds-server after the
+    // intitial messages.
+    // It also contains the LRR algorithm.
+    public static void requestHandler(DataOutputStream dout, BufferedReader in, int counter2) {
+
+        int y = counter2;
 
         while (true) {
             try {
                 dout.write(("REDY\n").getBytes());
                 dout.flush();
-                String s4 = in.readLine();
-                System.out.println(s4);
-                if (s4.contains("JCPL")) {
-                     
-                     V(dout, in, x1, y1, false);
-
-                }
-                if (s4.contains("NONE")) {
+                String JOBN = in.readLine();
+                System.out.println(JOBN);
+                if (JOBN.contains("NONE")) {
                     dout.write(("QUIT\n").getBytes());
                     dout.flush();
                     break;
 
                 }
+                if (JOBN.contains("JCPL")) {
+
+                    requestHandler(dout, in, y);
+
+                }
                 
-                String readyReply[] = s4.split(" ");
-                String core ="";
-                String memory ="";
-                String disk ="";
-                if(readyReply.length>5){
-                core = readyReply[4];
-                memory = readyReply[5];
-                disk = readyReply[6];
+                String JOBNArray[] = JOBN.split(" ");
+                String core = "";
+                String memory = "";
+                String disk = "";
+                if (JOBNArray.length > 5) {
+                    core = JOBNArray[4];
+                    memory = JOBNArray[5];
+                    disk = JOBNArray[6];
                 }
                 dout.write(("GETS Capable " + core + " " + memory + " " + disk + "\n").getBytes());
                 String dataFromGets = in.readLine();
@@ -152,69 +183,43 @@ public class Client2 {
                 int compareCore = 0;
                 String largestServerType = "";
 
-                
-                String largestServerType2 = schedule(dout, in, largestCore, dataCount , compareCore, largestServerType);
-                int largest = Integer.parseInt(largestServerType2.split(" ")[1]);
-                String type =  largestServerType2.split(" ")[0];
-                
+                String largestServerType2 = largestServerSearch(dout, in, largestCore, dataCount, compareCore,
+                        largestServerType);
+                // split the string to extract the number of the largest servers and the largest
+                // server type
+                int largestServerCount = Integer.parseInt(largestServerType2.split(" ")[1]);
+                String largestType = largestServerType2.split(" ")[0];
 
+                String temp[] = JOBN.split(" ");
+                while (true) {
 
-                if (s4.contains("QUIT")) {
-                    break;
+                    if (y >= largestServerCount)
+                        y = 0;
+                    if (JOBN.length() > 0) {
+                        dout.write(("OK\n").getBytes());
+                        dout.flush();
+                        String str = in.readLine();
 
-                }
-                if (!s4.equalsIgnoreCase("NONE")) {
-
-                    String temp[] = s4.split(" ");
-                    while (true) {
-
-                        if (y1 >= largest)
-                            y1 = 0;
-                        if (s4.length() > 0 && !s4.contains("JCPL")) {
-                            dout.write(("OK\n").getBytes());
-                             dout.flush(); 
-                             String s11 = in.readLine();
-
-                            dout.write(("SCHD " + temp[2] + " " +type+" "+ y1 + "\n").getBytes());
-                            dout.flush();
-                            y1++;
-
-                        }
-
-                        String s10 = in.readLine();
-                        System.out.println(s10);
-                        x1++;
-
-                        V(dout, in, x1, y1, false);
-                        if (s10.contains("DATA") || s10.contains("OK")) {
-                            while (true) {
-                                dout.write(("OK\n").getBytes());
-                                dout.flush();
-                                String s5 = in.readLine();
-                                System.out.println(s5);
-
-                                if (s5.contains(".")) {
-                                    break;
-
-                                }
-
-                            }
-
-                        }
-
-                        break;
+                        dout.write(("SCHD " + temp[2] + " " + largestType + " " + y + "\n").getBytes());
+                        dout.flush();
+                        y++;
 
                     }
+
+                    String str2 = in.readLine();
+                    System.out.println(str2);
+
+                    requestHandler(dout, in, y);
+
+                    break;
 
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+
             }
             break;
         }
-
-
 
     }
 

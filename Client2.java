@@ -44,7 +44,7 @@ public class Client2 {
             for (int i = 0; i < numberOfCapableServers; i++) {
 
                 saveCount = 0;
-                if (temp.size() > 4) {
+                if (temp.size() > 0) {
                     if (temp.get(i) != null && temp.get(i).length() > 4)
                         saveCount = Integer.parseInt(temp.get(i).split(" ")[4]);
                 }
@@ -60,7 +60,7 @@ public class Client2 {
 
                 if (largestCore == Integer.parseInt(temp.get(i).split(" ")[4])) {
                     largestType = temp.get(i).split(" ")[0];
-                    break;
+                    // break;
 
                 }
 
@@ -93,7 +93,7 @@ public class Client2 {
             dout.flush();
             String OK = in.readLine();
             System.out.println(OK);
-            dout.write(("AUTH 44751494\n").getBytes());
+            dout.write(("AUTH minh\n").getBytes());
             dout.flush();
             String OK2 = in.readLine();
             System.out.println(OK2);

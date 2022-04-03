@@ -26,7 +26,7 @@ public class Client {
     }
 
     // This method compares the cores of all capable servers. The server with the
-    // highest number of cores will saved into a string.
+    // highest number of cores will be saved into a string.
     // In addition, this method will count the number of the largest servers.
     // This method will return a string containing the largest server type and the
     // number of the largest servers
@@ -76,7 +76,6 @@ public class Client {
                 }
 
             }
-            // ./ds-server -c ds-S1-config01--wk6.xml -v brief -n > ds-test-config10-log.txt
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -91,12 +90,10 @@ public class Client {
         try {
             dout.write(("HELO\n").getBytes());
             dout.flush();
-            String OK = in.readLine();
-            System.out.println(OK);
+            in.readLine();
             dout.write(("AUTH minh\n").getBytes());
             dout.flush();
-            String OK2 = in.readLine();
-            System.out.println(OK2);
+            in.readLine();
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -109,7 +106,6 @@ public class Client {
     public static void closeConnection(DataOutputStream dout, BufferedReader in, Socket s) {
 
         try {
-
             dout.close();
             in.close();
             s.close();
@@ -128,13 +124,11 @@ public class Client {
             DataOutputStream dout = new DataOutputStream(s.getOutputStream());
             BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
             initialMessage(dout, in);
-
-            requestHandler(dout, in, 0);
-
+            requestHandler(dout, in);
             closeConnection(dout, in, s);
 
         } catch (Exception e) {
-            System.out.println(e);
+
         }
 
     }
@@ -142,103 +136,91 @@ public class Client {
     // This method is responsible for communicating with ds-server after the
     // intitial messages.
     // It also contains the LRR algorithm.
-    public static void requestHandler(DataOutputStream dout, BufferedReader in, int counter2) {
-
-        
+    public static void requestHandler(DataOutputStream dout, BufferedReader in) {
 
         String JOBN = "";
-        int y= 0;
-        int largestServerCount=0;
-        String largestType= "";
-        Boolean flag = false; 
+        int serverId = 0;
+        int largestServerCount = 0;
+        String largestType = "";
+        Boolean flag = false;
 
-        while (!(JOBN==null) && !(JOBN.contains("NONE"))) {
+        while (!(JOBN == null) && !(JOBN.contains("NONE"))) {
             try {
                 dout.write(("REDY\n").getBytes());
                 dout.flush();
                 JOBN = in.readLine();
-                System.out.println(JOBN);
 
+                if (!(JOBN == null) && JOBN.contains("JOBN")) {
 
+                    String JOBNArray[] = JOBN.split(" ");
+                    String core = "";
+                    String memory = "";
+                    String disk = "";
+                    if (JOBNArray.length > 6) {
+                        core = JOBNArray[4];
+                        memory = JOBNArray[5];
+                        disk = JOBNArray[6];
+                    }
+                    // execute this GETS code only once
+                    if (!core.isEmpty() && flag == false) {
+                        dout.write(("GETS Capable " + core + " " + memory + " " + disk + "\n").getBytes());
 
-
-                if(!(JOBN==null) && JOBN.contains("JOBN")) {
-
-                String JOBNArray[] = JOBN.split(" ");
-                String core = "";
-                String memory = "";
-                String disk = "";
-                if (JOBNArray.length > 6) {
-                    core = JOBNArray[4];
-                    memory = JOBNArray[5];
-                    disk = JOBNArray[6];
-                }
-                if(!core.isEmpty() && flag==false){
-                dout.write(("GETS Capable " + core + " " + memory + " " + disk + "\n").getBytes());
-                
-                }
-                if(flag==false){
-                String dataFromGets = in.readLine();
-                System.out.println(dataFromGets);
-                dout.flush();
-                String dataFromGetsInArrayForm[] = dataFromGets.split(" ");
-                int dataCount = Integer.parseInt(dataFromGetsInArrayForm[1]);
-                int largestCore = 0;
-                int compareCore = 0;
-                String largestServerType = "";
-
-                String largestServerType2 = largestServerSearch(dout, in, largestCore, dataCount, compareCore,
-                        largestServerType);
-                // split the string to extract the number of the largest servers and the largest
-                // server type
-                largestServerCount = Integer.parseInt(largestServerType2.split(" ")[1]);
-                largestType = largestServerType2.split(" ")[0];
-                
-                }
-                String temp[] = JOBN.split(" ");
-                
-
-                    if (y >= largestServerCount)
-                        y = 0;
-                    if (JOBN.length() > 0) {
-                        if(flag==false){
-                        dout.write(("OK\n").getBytes());
+                    }
+                    // execute this GETS part only once
+                    if (flag == false) {
+                        String dataFromGets = in.readLine();
                         dout.flush();
-                        String str = in.readLine();
-                        flag=true;
+                        String dataFromGetsInArrayForm[] = dataFromGets.split(" ");
+                        int dataCount = Integer.parseInt(dataFromGetsInArrayForm[1]);
+                        int largestCore = 0;
+                        int compareCore = 0;
+                        String largestServerType = "";
+
+                        String largestServerType2 = largestServerSearch(dout, in, largestCore, dataCount, compareCore,
+                                largestServerType);
+                        // split the string to extract the number of the largest servers and the largest
+                        // server type
+                        largestServerCount = Integer.parseInt(largestServerType2.split(" ")[1]);
+                        largestType = largestServerType2.split(" ")[0];
+
+                    }
+                    String temp[] = JOBN.split(" ");
+
+                    if (serverId >= largestServerCount)
+                        serverId = 0;
+                    if (JOBN.length() > 0) {
+                        if (flag == false) {
+                            dout.write(("OK\n").getBytes());
+                            dout.flush();
+                            in.readLine();
+                            // GETS command has done executing so set flag to true
+                            flag = true;
                         }
 
-                        dout.write(("SCHD " + temp[2] + " " + largestType + " " + y + "\n").getBytes());
+                        dout.write(("SCHD " + temp[2] + " " + largestType + " " + serverId + "\n").getBytes());
                         dout.flush();
-                        y++;
+                        serverId++;
 
                     }
 
-                    String str2 = in.readLine();
+                    in.readLine();
 
-
-                    // requestHandler(dout, in, y);
-
-                }  
-
-                
+                }
 
             } catch (Exception e) {
 
             }
-            
 
-            
         }
-   try{
-        dout.write(("QUIT\n").getBytes());
-        dout.flush();
-        
+        try {
+            dout.write(("QUIT\n").getBytes());
+            dout.flush();
+
+        }
+
+        catch (Exception e) {
+        }
+
     }
 
-        
-        catch(Exception e){}
-
-    }
-     
 }

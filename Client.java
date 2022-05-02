@@ -30,58 +30,24 @@ public class Client {
     // In addition, this method will count the number of the largest servers.
     // This method will return a string containing the largest server type and the
     // number of the largest servers
-    public static String largestServerSearch(DataOutputStream dout, BufferedReader in, int saveCount,
-            int numberOfCapableServers, int largestCore, String largestType) {
+    public static String firstServer(DataOutputStream dout, BufferedReader in, int saveCount,
+        int numberOfCapableServers, int largestCore, String largestType) {
 
-        int countLargest = 0;
+       
         List<String> temp = new ArrayList<String>();
 
-        try {
+        try { 
             dout.write(("OK\n").getBytes());
 
             temp = saveAllServers(in, numberOfCapableServers);
 
-            for (int i = 0; i < numberOfCapableServers; i++) {
 
-                saveCount = 0;
-                if (temp.size() > 0) {
-                    if (temp.get(i) != null)
-                        saveCount = Integer.parseInt(temp.get(i).split(" ")[4]);
-                }
-
-                if (saveCount >= largestCore) {
-                    largestCore = saveCount;
-
-                }
-
-            }
-
-            for (int i = 0; i < numberOfCapableServers; i++) {
-
-                if (largestCore == Integer.parseInt(temp.get(i).split(" ")[4])) {
-                    largestType = temp.get(i).split(" ")[0];
-                    break;
-
-                }
-
-            }
-
-            for (int i = 0; i < numberOfCapableServers; i++) {
-                if (temp.get(i).length() > 0) {
-                    if (largestType.equalsIgnoreCase(temp.get(i).split(" ")[0])) {
-
-                        countLargest++;
-
-                    }
-                }
-
-            }
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
-        return largestType + " " + countLargest;
+        return temp.get(0).split(" ")[0];
     }
 
     // This method is in charge of sending initial messages like "HELO" and "AUTH"
@@ -176,12 +142,12 @@ public class Client {
                         int compareCore = 0;
                         String largestServerType = "";
 
-                        String largestServerType2 = largestServerSearch(dout, in, largestCore, dataCount, compareCore,
+                        String largestServerType2 = firstServer(dout, in, largestCore, dataCount, compareCore,
                                 largestServerType);
                         // split the string to extract the number of the largest servers and the largest
                         // server type
-                        largestServerCount = Integer.parseInt(largestServerType2.split(" ")[1]);
-                        largestType = largestServerType2.split(" ")[0];
+                      
+                        largestType = largestServerType2;
 
                     }
                     String temp[] = JOBN.split(" ");
@@ -194,7 +160,7 @@ public class Client {
                             dout.flush();
                             in.readLine();
                             // GETS command has done executing so set flag to true
-                            flag = true;
+                            flag = false;
                         }
 
                         dout.write(("SCHD " + temp[2] + " " + largestType + " " + serverId + "\n").getBytes());

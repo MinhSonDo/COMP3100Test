@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Client {
     public static void main(String[] args) {
 
@@ -18,81 +17,128 @@ public class Client {
     // of strings
     public static List<String> saveAllServers(BufferedReader in, int numberOfServer) throws IOException {
         List<String> allCapableServer = new ArrayList<String>();
-        while (numberOfServer != 0) {
+       try{ while (numberOfServer != 0) {
             allCapableServer.add(in.readLine());
 
             numberOfServer--;
-        }
+        }}
+        catch(Exception e){
+            
+            e.printStackTrace();}
         return allCapableServer;
     }
 
-    public static String serverSearch(DataOutputStream dout, BufferedReader in, String core, int numberOfCapableServers) throws Exception {
+    public static String serverSearch(DataOutputStream dout, BufferedReader in, String core, int numberOfCapableServers)
+            throws Exception {
         String server = " ";
 
         List<String> allServer = new ArrayList<String>();
         try {
             dout.write(("OK\n").getBytes());
+            dout.flush();
             allServer = saveAllServers(in, numberOfCapableServers);
 
             for (int i = 0; i < allServer.size(); i++) {
 
-                if (allServer.get(i).split(" ")[2].equals("inactive") || allServer.get(i).split(" ")[2].equals("idle")) {
+                if (allServer.get(i).split(" ")[2].equals("inactive")
+                        || allServer.get(i).split(" ")[2].equals("idle")) {
 
                     System.out.println(Integer.parseInt(allServer.get(i).split(" ")[4]));
                     if (Integer.parseInt(allServer.get(i).split(" ")[4]) >= Integer.parseInt(core)) {
 
-                         System.out.println((allServer.get(i).split(" ")[4])+ " " + core);
+                        System.out.println((allServer.get(i).split(" ")[4]) + " " + core);
 
                         server += allServer.get(i);
 
                         break;
                     }
-                    
 
-                }
-                
-                
-                
-            } if(server.equals(" ")) {
-
-                for (int i = 0; i < allServer.size(); i++) {
-
-                    if (Integer.parseInt(allServer.get(i).split(" ")[4]) >= Integer.parseInt(core)) {
-                        
-                        server += allServer.get(i);
-                        break;
-                    }           
                 }
 
             }
 
+            List<String> capableServers = new ArrayList<>();
+
+            if (server.equals(" ")) {
+
+                for (int i = 0; i < allServer.size(); i++) {
+
+                    if (Integer.parseInt(allServer.get(i).split(" ")[4]) >= Integer.parseInt(core)) {
+
+                        capableServers.add(allServer.get(i));
+
+                    }
+                }
+
+                List<String> waitTime = new ArrayList<>();
+                dout.write(("OK\n").getBytes());
+                dout.flush();
+                for (int i = 0; i < capableServers.size(); i++) {
+
+                    dout.write(("EJWT " + capableServers.get(i).split(" ")[0] + " "
+                            + capableServers.get(i).split(" ")[1] + "\n").getBytes());
+
+                    dout.flush();
+                    
+                    String arr = in.readLine();
+                    
+                   if(!arr.equals("."))waitTime.add(arr);
+                    
+                }
+
+                String arr = in.readLine();
+                if(!arr.equals("."))waitTime.add(arr);
+                   
+                
+                int minimum= 0;
+               if(waitTime.size()>0)  
+               minimum= Integer.parseInt(waitTime.get(0));
+
+                 
+               for (int i = 1; i < capableServers.size(); i++) {
+
+                   if(minimum>Integer.parseInt(waitTime.get(i))){
+
+                     minimum = Integer.parseInt(waitTime.get(i));
+                   }
+
+               }
+
+
+               int indexOfTheLowest=0;
+
+
+               for(int i=0; i<waitTime.size();i++){
+
+                     if(minimum== Integer.parseInt(waitTime.get(i))){
+
+                            indexOfTheLowest=i;
+                            break;
+
+                     }
+                                       
+               } 
+
+
+
+               server += capableServers.get(indexOfTheLowest);            
+           
+
+
+            }
+
         } catch (Exception e) {
-            System.out.println("not working");
+           e.printStackTrace();
         }
-        if (server.equals(" ")) server += allServer.get(0);
+        if (server.equals(" "))
+            server += allServer.get(0);
 
         return server;
 
     }
 
- 
     // This method is in charge of sending initial messages like "HELO" and "AUTH"
-    public static void initialMessage(DataOutputStream dout, BufferedReader in) {
 
-        try {
-            dout.write(("HELO\n").getBytes());
-            dout.flush();
-            in.readLine();
-            dout.write(("AUTH minh\n").getBytes());
-            dout.flush();
-            in.readLine();
-
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-    }
 
     // This method closes data output stream, buffered reader and socket.
     public static void closeConnection(DataOutputStream dout, BufferedReader in, Socket s) {
@@ -141,7 +187,7 @@ public class Client {
                 dout.write(("REDY\n").getBytes());
                 dout.flush();
                 JOBN = in.readLine();
-                
+
                 if (!(JOBN == null) && JOBN.contains("JOBN")) {
 
                     String JOBNArray[] = JOBN.split(" ");
@@ -154,45 +200,47 @@ public class Client {
                         disk = JOBNArray[6];
                     }
                     // execute this GETS code only once
-                    if (!core.isEmpty() ) {
+                    if (!core.isEmpty()) {
                         dout.write(("GETS Capable " + core + " " + memory + " " + disk + "\n").getBytes());
-
+                       
                     }
                     // execute this GETS part only once
-                    
-                        String dataFromGets = in.readLine();
-                        dout.flush();
-                        
-                        String dataFromGetsInArrayForm[] = dataFromGets.split(" ");
-                        int dataCount = Integer.parseInt(dataFromGetsInArrayForm[1]);
-                        int largestCore = 0;
-                        int compareCore = 0;
-                        String largestServerType = "";
+                   
+                    String dataFromGets = in.readLine();
+                    if (dataFromGets.contains("JOBN")){
 
-                        String largestServerType2 = serverSearch(dout, in,core, dataCount); 
-                        // split the string to extract the number of the largest servers and the largest
-                        // server type
-                        System.out.println(largestServerType2.split(" ")[1]);
-                        System.out.println(largestServerType2.split(" ")[2]);
-                        largestServerCount = Integer.parseInt(largestServerType2.split(" ")[2]);
-                        
+                        dataFromGets = in.readLine();
 
-                        largestType = largestServerType2.split(" ")[1];
+                    }
+                    dout.flush();
 
-                        String temp[] = JOBN.split(" ");
-                        
+                    String dataFromGetsInArrayForm[] = dataFromGets.split(" ");
+                    int dataCount = Integer.parseInt(dataFromGetsInArrayForm[1]);
+                    int largestCore = 0;
+                    int compareCore = 0;
+                    String largestServerType = "";
+
+                    String largestServerType2 = serverSearch(dout, in, core, dataCount);
+                    // split the string to extract the number of the largest servers and the largest
+                    // server type
+                    System.out.println(largestServerType2.split(" ")[1]);
+                    System.out.println(largestServerType2.split(" ")[2]);
+                    largestServerCount = Integer.parseInt(largestServerType2.split(" ")[2]);
+
+                    largestType = largestServerType2.split(" ")[1];
+
+                    String temp[] = JOBN.split(" ");
+
                     if (JOBN.length() > 0) {
-                    
-                            dout.write(("OK\n").getBytes());
-                            dout.flush();
-                            in.readLine();
-                            // GETS command has done executing so set flag to true
-                            
-                    
 
-                        dout.write(("SCHD " + temp[2] + " " + largestType + " " + largestServerCount  + "\n").getBytes());
+                        dout.write(("OK\n").getBytes());
                         dout.flush();
-                        
+                        in.readLine();
+                        // GETS command has done executing so set flag to true
+
+                        dout.write(
+                                ("SCHD " + temp[2] + " " + largestType + " " + largestServerCount + "\n").getBytes());
+                        dout.flush();
 
                     }
 
@@ -213,7 +261,29 @@ public class Client {
 
         catch (Exception e) {
 
-         
+        }
+
+    }
+
+
+
+
+
+
+
+    public static void initialMessage(DataOutputStream dout, BufferedReader in) {
+
+        try {
+            dout.write(("HELO\n").getBytes());
+            dout.flush();
+            in.readLine();
+            dout.write(("AUTH minh\n").getBytes());
+            dout.flush();
+            in.readLine();
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
     }

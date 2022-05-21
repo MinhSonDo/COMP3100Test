@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Client {
+
+    
     public static void main(String[] args) {
 
         clientServerCommunication();
@@ -37,18 +39,19 @@ public class Client {
         String server = " ";
 
         List<String> allServer = new ArrayList<String>();
+        String largestServer =" ";
         try {
             dout.write(("OK\n").getBytes());
             dout.flush();
             allServer = saveAllServers(in, numberOfCapableServers);
-
+            largestServer= allServer.get(allServer.size()-1).split(" ")[4];
             for (int i = 0; i < allServer.size(); i++) {
 
                 if (allServer.get(i).split(" ")[2].equals("inactive")
                         || allServer.get(i).split(" ")[2].equals("idle")) {
 
                     
-                    if (Integer.parseInt(allServer.get(i).split(" ")[4]) >= Integer.parseInt(core)) {
+                    if (Integer.parseInt(allServer.get(i).split(" ")[4]) < Integer.parseInt(core)) {
 
                      
 
@@ -156,7 +159,7 @@ public class Client {
 
                if(fastServers.size()>0)
                server += fastServers.get(0);            
-           
+              
 
 
             }
@@ -164,8 +167,15 @@ public class Client {
         } catch (Exception e) {
            e.printStackTrace();
         }
-        if (server.equals(" "))
+
+        
+        if (server.equals(" ") || server.contains(largestServer)){
             server += allServer.get(0);
+            
+        }
+
+
+        
 
         return server;
 

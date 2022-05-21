@@ -18,7 +18,11 @@ public class Client {
     public static List<String> saveAllServers(BufferedReader in, int numberOfServer) throws IOException {
         List<String> allCapableServer = new ArrayList<String>();
        try{ while (numberOfServer != 0) {
-            allCapableServer.add(in.readLine());
+        String arr="";
+              
+              arr = in.readLine();
+
+            allCapableServer.add(arr);
 
             numberOfServer--;
         }}
@@ -43,10 +47,10 @@ public class Client {
                 if (allServer.get(i).split(" ")[2].equals("inactive")
                         || allServer.get(i).split(" ")[2].equals("idle")) {
 
-                    System.out.println(Integer.parseInt(allServer.get(i).split(" ")[4]));
+                    
                     if (Integer.parseInt(allServer.get(i).split(" ")[4]) >= Integer.parseInt(core)) {
 
-                        System.out.println((allServer.get(i).split(" ")[4]) + " " + core);
+                     
 
                         server += allServer.get(i);
 
@@ -58,8 +62,11 @@ public class Client {
             }
 
             List<String> capableServers = new ArrayList<>();
+            List<String>fastServers = new ArrayList<>();
 
             if (server.equals(" ")) {
+                dout.write(("OK\n").getBytes());
+                dout.flush();
 
                 for (int i = 0; i < allServer.size(); i++) {
 
@@ -69,33 +76,38 @@ public class Client {
 
                     }
                 }
-
+                
                 List<String> waitTime = new ArrayList<>();
-                dout.write(("OK\n").getBytes());
-                dout.flush();
+                
+                
                 for (int i = 0; i < capableServers.size(); i++) {
 
                     dout.write(("EJWT " + capableServers.get(i).split(" ")[0] + " "
                             + capableServers.get(i).split(" ")[1] + "\n").getBytes());
 
                     dout.flush();
-                    
-                    String arr = in.readLine();
+                    String arr =".";
+                   
+                     arr = in.readLine();
                     
                    if(!arr.equals("."))waitTime.add(arr);
-                    
+                    System.out.println(arr);
                 }
-
-                String arr = in.readLine();
+                
+                String arr =".";
+               
+                arr = in.readLine();
+               
+                System.out.println(arr);
                 if(!arr.equals("."))waitTime.add(arr);
                    
                 
                 int minimum= 0;
-               if(waitTime.size()>0)  
+               if(waitTime.size()>0)  {
                minimum= Integer.parseInt(waitTime.get(0));
 
                  
-               for (int i = 1; i < capableServers.size(); i++) {
+               for (int i = 1; i < waitTime.size(); i++) {
 
                    if(minimum>Integer.parseInt(waitTime.get(i))){
 
@@ -103,17 +115,16 @@ public class Client {
                    }
 
                }
+            }
 
+               List<Integer>indexOfTheLowest = new ArrayList<>();
 
-               int indexOfTheLowest=0;
-
-
+                  //find all servers with this wait time
                for(int i=0; i<waitTime.size();i++){
 
                      if(minimum== Integer.parseInt(waitTime.get(i))){
 
-                            indexOfTheLowest=i;
-                            break;
+                        indexOfTheLowest.add(i);
 
                      }
                                        
@@ -121,7 +132,30 @@ public class Client {
 
 
 
-               server += capableServers.get(indexOfTheLowest);            
+            
+
+                // all the servers with the minimum wait time
+            for( int i =0; i<indexOfTheLowest.size();i++){
+
+
+                  fastServers.add(capableServers.get(indexOfTheLowest.get(i)));
+
+
+
+            }
+
+
+
+             
+
+
+
+
+
+
+
+               if(fastServers.size()>0)
+               server += fastServers.get(0);            
            
 
 
@@ -186,6 +220,7 @@ public class Client {
             try {
                 dout.write(("REDY\n").getBytes());
                 dout.flush();
+                
                 JOBN = in.readLine();
 
                 if (!(JOBN == null) && JOBN.contains("JOBN")) {
@@ -202,16 +237,20 @@ public class Client {
                     // execute this GETS code only once
                     if (!core.isEmpty()) {
                         dout.write(("GETS Capable " + core + " " + memory + " " + disk + "\n").getBytes());
-                       
+                        dout.flush();
                     }
                     // execute this GETS part only once
-                   
-                    String dataFromGets = in.readLine();
+                    
+                    String dataFromGets="";
+                  
+                     dataFromGets = in.readLine();
+                    
                     if (dataFromGets.contains("JOBN")){
 
                         dataFromGets = in.readLine();
 
                     }
+                   
                     dout.flush();
 
                     String dataFromGetsInArrayForm[] = dataFromGets.split(" ");
@@ -223,8 +262,7 @@ public class Client {
                     String largestServerType2 = serverSearch(dout, in, core, dataCount);
                     // split the string to extract the number of the largest servers and the largest
                     // server type
-                    System.out.println(largestServerType2.split(" ")[1]);
-                    System.out.println(largestServerType2.split(" ")[2]);
+
                     largestServerCount = Integer.parseInt(largestServerType2.split(" ")[2]);
 
                     largestType = largestServerType2.split(" ")[1];
@@ -235,6 +273,7 @@ public class Client {
 
                         dout.write(("OK\n").getBytes());
                         dout.flush();
+                       
                         in.readLine();
                         // GETS command has done executing so set flag to true
 
@@ -243,7 +282,7 @@ public class Client {
                         dout.flush();
 
                     }
-
+                    
                     in.readLine();
 
                 }
